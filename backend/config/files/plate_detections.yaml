@@ -1,0 +1,67 @@
+table: plate_detections
+description: >
+  Raw event log. One row per camera sighting of a plate (produced
+  by the YOLO + OCR pipeline). This is the source data trajectories
+  are built from.
+
+columns:
+  - name: detection_id
+    type: SERIAL
+    primary_key: true
+
+  - name: plate_number
+    type: TEXT
+    not_null: true
+    foreign_key:
+      references_table: vehicles
+      references_column: plate_number
+      on_delete: CASCADE
+
+  - name: camera_id
+    type: INTEGER
+    not_null: true
+    foreign_key:
+      references_table: cameras
+      references_column: camera_id
+      on_delete: RESTRICT
+
+  - name: detected_at
+    type: TIMESTAMP
+    not_null: true
+    description: Exact moment the plate was read by the camera.
+
+  - name: confidence
+    type: NUMERIC(4,3)
+    nullable: true
+    check: "confidence >= 0 AND confidence <= 1"
+    description: OCR model confidence score.
+
+  - name: image_path
+    type: TEXT
+    nullable: true
+    description: Optional path/URL to the cropped plate image.
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_detections_plate
+    columns: [plate_number]
+  - name: idx_detections_camera
+    columns: [camera_id]
+  - name: idx_detections_detected_at
+    columns: [detected_at]
+  - name: idx_detections_plate_time
+    columns: [plate_number, detected_at]
+    description: Composite index — speeds up ordered trajectory queries per plate.
+
+relations:
+  belongs_to:
+    - vehicles (via plate_number)
+    - cameras (via camera_id)
+  referenced_by:
+    - table: trajectory_hops
+      via_columns: [from_detection_id, to_detection_id]
+    - table: alerts
+      via_column: detection_id

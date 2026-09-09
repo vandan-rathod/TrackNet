@@ -1,0 +1,35 @@
+table: system_settings
+description: >
+  Simple key-value configuration store so operational thresholds
+  (e.g. suspicious-speed cutoff) aren't hardcoded in application code
+  and can be tuned from the admin dashboard.
+
+columns:
+  - name: setting_key
+    type: TEXT
+    primary_key: true
+
+  - name: setting_value
+    type: TEXT
+    not_null: true
+    description: Stored as text; cast to the appropriate type in application code.
+
+  - name: description
+    type: TEXT
+    nullable: true
+
+  - name: updated_at
+    type: TIMESTAMP
+    default: now()
+
+seed_data:
+  - setting_key: suspicious_speed_kmh_threshold
+    setting_value: "150"
+  - setting_key: duplicate_detection_window_seconds
+    setting_value: "5"
+  - setting_key: camera_offline_timeout_seconds
+    setting_value: "120"
+
+relations:
+  none: true
+  note: Standalone table, no foreign keys either direction.

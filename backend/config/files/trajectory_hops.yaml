@@ -1,0 +1,78 @@
+table: trajectory_hops
+description: >
+  One row per consecutive pair of detections for a single vehicle.
+  Stores the computed distance, time gap, and speed between two
+  camera sightings — this is the core trajectory-reconstruction table.
+
+columns:
+  - name: hop_id
+    type: SERIAL
+    primary_key: true
+
+  - name: plate_number
+    type: TEXT
+    not_null: true
+    foreign_key:
+      references_table: vehicles
+      references_column: plate_number
+      on_delete: CASCADE
+
+  - name: from_detection_id
+    type: INTEGER
+    not_null: true
+    foreign_key:
+      references_table: plate_detections
+      references_column: detection_id
+      on_delete: CASCADE
+    description: The earlier detection in the pair.
+
+  - name: to_detection_id
+    type: INTEGER
+    not_null: true
+    foreign_key:
+      references_table: plate_detections
+      references_column: detection_id
+      on_delete: CASCADE
+    description: The later detection in the pair.
+
+  - name: distance_km
+    type: NUMERIC(10,3)
+    nullable: true
+    description: Great-circle distance between the two cameras (via ST_Distance).
+
+  - name: time_diff_seconds
+    type: INTEGER
+    nullable: true
+    description: to_detection.detected_at minus from_detection.detected_at.
+
+  - name: speed_kmh
+    type: NUMERIC(10,2)
+    nullable: true
+    description: distance_km / (time_diff_seconds / 3600).
+
+  - name: is_suspicious
+    type: BOOLEAN
+    default: false
+    description: True if speed_kmh exceeds the plausibility threshold.
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+constraints:
+  - name: chk_hop_order
+    expression: "from_detection_id <> to_detection_id"
+
+indexes:
+  - name: idx_hops_plate
+    columns: [plate_number]
+  - name: idx_hops_suspicious
+    columns: [is_suspicious]
+
+relations:
+  belongs_to:
+    - vehicles (via plate_number)
+    - plate_detections (via from_detection_id, to_detection_id)
+  referenced_by:
+    - table: alerts
+      via_column: hop_id

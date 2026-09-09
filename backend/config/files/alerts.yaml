@@ -1,0 +1,70 @@
+table: alerts
+description: >
+  Generated when a detection matches the blacklist, or when a
+  trajectory hop's speed is physically implausible. Consumed by
+  the frontend alerts dashboard.
+
+columns:
+  - name: alert_id
+    type: SERIAL
+    primary_key: true
+
+  - name: plate_number
+    type: TEXT
+    not_null: true
+    description: Not a hard FK — kept as plain text so alerts survive even if related rows change.
+
+  - name: detection_id
+    type: INTEGER
+    nullable: true
+    foreign_key:
+      references_table: plate_detections
+      references_column: detection_id
+      on_delete: SET NULL
+    description: Set when the alert was triggered by a blacklist match.
+
+  - name: hop_id
+    type: INTEGER
+    nullable: true
+    foreign_key:
+      references_table: trajectory_hops
+      references_column: hop_id
+      on_delete: SET NULL
+    description: Set when the alert was triggered by a suspicious-speed hop.
+
+  - name: alert_type
+    type: TEXT
+    not_null: true
+    check: "alert_type IN ('BLACKLIST', 'SUSPICIOUS_SPEED', 'OTHER')"
+
+  - name: severity
+    type: TEXT
+    nullable: true
+    check: "severity IN ('LOW', 'MEDIUM', 'HIGH')"
+
+  - name: message
+    type: TEXT
+    nullable: true
+    description: Human-readable summary shown on the dashboard.
+
+  - name: is_resolved
+    type: BOOLEAN
+    default: false
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_alerts_plate
+    columns: [plate_number]
+  - name: idx_alerts_created_at
+    columns: [created_at]
+  - name: idx_alerts_unresolved
+    columns: [is_resolved]
+    partial: "WHERE is_resolved = FALSE"
+
+relations:
+  belongs_to:
+    - plate_detections (via detection_id, optional)
+    - trajectory_hops (via hop_id, optional)

@@ -1,0 +1,47 @@
+table: users
+description: >
+  Dashboard/admin accounts. Operators view alerts and trajectories;
+  admins manage the blacklist and system settings.
+
+columns:
+  - name: user_id
+    type: SERIAL
+    primary_key: true
+
+  - name: username
+    type: TEXT
+    not_null: true
+    unique: true
+
+  - name: email
+    type: TEXT
+    unique: true
+    nullable: true
+
+  - name: password_hash
+    type: TEXT
+    not_null: true
+    description: Store a bcrypt/argon2 hash — never plaintext.
+
+  - name: role
+    type: TEXT
+    default: "operator"
+    check: "role IN ('admin', 'operator', 'viewer')"
+
+  - name: is_active
+    type: BOOLEAN
+    default: true
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+  - name: last_login_at
+    type: TIMESTAMP
+    nullable: true
+
+relations:
+  referenced_by:
+    - table: audit_logs
+      via_column: user_id
+      nullable: true

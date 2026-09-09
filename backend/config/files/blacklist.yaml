@@ -1,0 +1,47 @@
+table: blacklist
+description: >
+  Plates flagged for monitoring or alerting. Intentionally has no
+  hard foreign key to vehicles, because a plate can be blacklisted
+  before it has ever been detected by a camera.
+
+columns:
+  - name: blacklist_id
+    type: SERIAL
+    primary_key: true
+
+  - name: plate_number
+    type: TEXT
+    not_null: true
+    unique: true
+
+  - name: reason
+    type: TEXT
+    nullable: true
+    description: e.g. "Reported stolen", "Wanted for investigation".
+
+  - name: severity
+    type: TEXT
+    nullable: true
+    check: "severity IN ('LOW', 'MEDIUM', 'HIGH')"
+
+  - name: is_active
+    type: BOOLEAN
+    default: true
+    description: Allows soft-removal from the blacklist without deleting history.
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_blacklist_plate
+    columns: [plate_number]
+
+relations:
+  note: >
+    Checked against vehicles.plate_number and plate_detections at the
+    application layer (e.g. "if plate in blacklist: generate_alert()"),
+    not via a database foreign key.
+  referenced_by:
+    - table: alerts
+      via_column: plate_number (matched by value, not FK)

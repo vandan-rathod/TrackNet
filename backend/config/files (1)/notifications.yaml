@@ -1,0 +1,51 @@
+table: notifications
+description: >
+  Tracks delivery of an alert through a specific channel (email, SMS,
+  dashboard push, websocket). Separate from `alerts` because one alert
+  may be delivered through multiple channels, each with its own status.
+
+columns:
+  - name: notification_id
+    type: SERIAL
+    primary_key: true
+
+  - name: alert_id
+    type: INTEGER
+    not_null: true
+    foreign_key:
+      references_table: alerts
+      references_column: alert_id
+      on_delete: CASCADE
+
+  - name: channel
+    type: TEXT
+    not_null: true
+    check: "channel IN ('EMAIL', 'SMS', 'DASHBOARD', 'WEBSOCKET')"
+
+  - name: recipient
+    type: TEXT
+    nullable: true
+    description: Email address, phone number, or user_id as text.
+
+  - name: status
+    type: TEXT
+    default: "PENDING"
+    check: "status IN ('PENDING', 'SENT', 'FAILED')"
+
+  - name: sent_at
+    type: TIMESTAMP
+    nullable: true
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_notifications_alert
+    columns: [alert_id]
+  - name: idx_notifications_status
+    columns: [status]
+
+relations:
+  belongs_to:
+    - alerts (via alert_id)

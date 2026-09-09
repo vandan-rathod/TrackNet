@@ -1,0 +1,29 @@
+table: zones
+description: >
+  Groups cameras into geographic areas (e.g. "SG Highway", "Ring Road")
+  for filtering the map view and regional reporting.
+
+columns:
+  - name: zone_id
+    type: SERIAL
+    primary_key: true
+
+  - name: name
+    type: TEXT
+    not_null: true
+    unique: true
+
+  - name: description
+    type: TEXT
+    nullable: true
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+relations:
+  referenced_by:
+    - table: cameras
+      via_column: zone_id
+      nullable: true
+      description: A camera can be unassigned to any zone.

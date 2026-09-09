@@ -1,0 +1,7 @@
+tables:
+  - users
+  - vehicles
+  - cameras
+  - detections
+  - alerts
+  

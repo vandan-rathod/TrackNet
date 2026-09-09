@@ -1,0 +1,41 @@
+table: camera_health
+description: >
+  Heartbeat/status log for each camera. Lets the dashboard show
+  "N cameras offline" and helps distinguish a real gap in detections
+  from a camera simply being down.
+
+columns:
+  - name: health_id
+    type: SERIAL
+    primary_key: true
+
+  - name: camera_id
+    type: INTEGER
+    not_null: true
+    foreign_key:
+      references_table: cameras
+      references_column: camera_id
+      on_delete: CASCADE
+
+  - name: status
+    type: TEXT
+    not_null: true
+    check: "status IN ('ONLINE', 'OFFLINE', 'DEGRADED')"
+
+  - name: last_ping_at
+    type: TIMESTAMP
+    default: now()
+
+  - name: notes
+    type: TEXT
+    nullable: true
+
+indexes:
+  - name: idx_camera_health_camera
+    columns: [camera_id]
+  - name: idx_camera_health_ping
+    columns: [last_ping_at]
+
+relations:
+  belongs_to:
+    - cameras (via camera_id)

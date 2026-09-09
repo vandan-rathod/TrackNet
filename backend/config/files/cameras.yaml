@@ -1,0 +1,54 @@
+table: cameras
+description: >
+  Master list of all ANPR camera locations. Every detection references
+  a camera from this table.
+
+columns:
+  - name: camera_id
+    type: SERIAL
+    primary_key: true
+    description: Auto-incrementing unique camera identifier.
+
+  - name: name
+    type: TEXT
+    not_null: true
+    unique: true
+    description: Human-readable camera label, e.g. "CAM01".
+
+  - name: latitude
+    type: DOUBLE PRECISION
+    not_null: true
+
+  - name: longitude
+    type: DOUBLE PRECISION
+    not_null: true
+
+  - name: location
+    type: GEOGRAPHY(POINT, 4326)
+    not_null: true
+    description: >
+      PostGIS point built from longitude/latitude.
+      Created as ST_MakePoint(longitude, latitude)::geography.
+
+  - name: description
+    type: TEXT
+    nullable: true
+    description: Optional human note, e.g. "Junction near SG Highway".
+
+  - name: is_active
+    type: BOOLEAN
+    default: true
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_cameras_location
+    type: GIST
+    columns: [location]
+
+relations:
+  referenced_by:
+    - table: plate_detections
+      via_column: camera_id

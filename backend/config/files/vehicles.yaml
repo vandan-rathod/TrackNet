@@ -1,0 +1,40 @@
+table: vehicles
+description: >
+  One row per unique plate number ever seen. Acts as the parent
+  reference table for detections, trajectory hops, and alerts.
+
+columns:
+  - name: plate_number
+    type: TEXT
+    primary_key: true
+    description: Normalized plate string, e.g. "GJ01AB1234".
+
+  - name: vehicle_type
+    type: TEXT
+    nullable: true
+    description: Optional classification, e.g. "car", "bike", "truck".
+
+  - name: first_seen_at
+    type: TIMESTAMP
+    nullable: true
+    description: Timestamp of the earliest known detection for this plate.
+
+  - name: last_seen_at
+    type: TIMESTAMP
+    nullable: true
+    description: Timestamp of the most recent known detection for this plate.
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+relations:
+  referenced_by:
+    - table: plate_detections
+      via_column: plate_number
+    - table: trajectory_hops
+      via_column: plate_number
+  note: >
+    blacklist.plate_number is validated against this table at the
+    application layer, not via a hard foreign key, since a plate can
+    be blacklisted before it is ever detected.

@@ -1,0 +1,50 @@
+table: audit_logs
+description: >
+  Tracks actions taken by dashboard users for accountability —
+  e.g. who added a plate to the blacklist or resolved an alert, and when.
+
+columns:
+  - name: log_id
+    type: SERIAL
+    primary_key: true
+
+  - name: user_id
+    type: INTEGER
+    nullable: true
+    foreign_key:
+      references_table: users
+      references_column: user_id
+      on_delete: SET NULL
+
+  - name: action
+    type: TEXT
+    not_null: true
+    description: e.g. "BLACKLIST_ADD", "ALERT_RESOLVE", "CAMERA_DISABLE".
+
+  - name: target_table
+    type: TEXT
+    nullable: true
+    description: e.g. "blacklist", "alerts".
+
+  - name: target_id
+    type: TEXT
+    nullable: true
+    description: ID of the affected row, kept as text to stay generic across tables.
+
+  - name: details
+    type: TEXT
+    nullable: true
+
+  - name: created_at
+    type: TIMESTAMP
+    default: now()
+
+indexes:
+  - name: idx_audit_logs_user
+    columns: [user_id]
+  - name: idx_audit_logs_created_at
+    columns: [created_at]
+
+relations:
+  belongs_to:
+    - users (via user_id, optional)
