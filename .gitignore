@@ -14,5 +14,5 @@ index.html.bak_*
 *.pt
 *.h5
 *.onnx
-*/models/
+!*/models/
 OCR/
