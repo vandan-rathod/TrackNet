@@ -1,4 +1,4 @@
-from engine.multithreading_tracking import MultiThreadingTracker  # pyright: ignore[reportMissingImports]
+from engine.core.tracker import MultiThreadingTracker  # pyright: ignore[reportMissingImports]
 import cv2 as cv
 import time
 
