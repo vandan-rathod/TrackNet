@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import psycopg2
+import psycopg2 as pg
 from dotenv import load_dotenv
 
 # SIH/backend/.env
@@ -21,7 +21,13 @@ class DatabaseConnection:
             return self.connection
 
         try:
-            self.connection = psycopg2.connect(
+            database_url=os.getenv("DATABASE_URL")
+            
+            if database_url:
+                self.connection=pg.connect(
+                    database_url
+                )
+            self.connection = pg.connect(
                 host=os.getenv("DB_HOST"),
                 port=os.getenv("DB_PORT", "5432"),
                 database=os.getenv("DB_NAME"),
@@ -32,7 +38,7 @@ class DatabaseConnection:
 
             return self.connection
 
-        except psycopg2.Error as error:
+        except pg.Error as error:
             self.connection = None
 
             raise RuntimeError(
@@ -46,7 +52,7 @@ class DatabaseConnection:
             try:
                 self.connection.close()
 
-            except psycopg2.Error as error:
+            except pg.Error as error:
                 raise RuntimeError(
                     f"Failed to close database connection: {error}"
                 ) from error
