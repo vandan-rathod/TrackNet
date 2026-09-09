@@ -5,3 +5,10 @@ venv
 .vscode
 Dataset
 .zip
+index.html.bak_*
+# Ignore model files
+*.pt
+*.h5
+*.onnx
+models/
+OCR/
