@@ -65,7 +65,6 @@ class YAMLLoader:
         tables = []
 
         for yaml_file in yaml_files:
-
             table = self.load_file(yaml_file)
 
             if "table" not in table:
@@ -78,11 +77,9 @@ class YAMLLoader:
         return tables
 
     def get_table(self, table_name):
-
         tables = self.load_tables()
 
         for table in tables:
-
             if table["table"] == table_name:
                 return table
 
