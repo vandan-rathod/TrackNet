@@ -78,9 +78,11 @@ class SQLGenerator:
                 raise ValueError(f"Invalid constraint in table '{table_name}'")
             name = self._identifier(constraint.get("name"), "constraint")
             definitions.append(f"CONSTRAINT {name} CHECK ({constraint['expression']})")
+        separator = ",\n    "
+        body = separator.join(definitions)
         return (
             f"CREATE TABLE IF NOT EXISTS {table_name} (\n"
-            f"    {',\n    '.join(definitions)}\n"
+            f"    {body}\n"
             ");"
         )
 
