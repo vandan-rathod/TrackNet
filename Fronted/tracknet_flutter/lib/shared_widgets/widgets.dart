@@ -222,17 +222,18 @@ class StatusBadge extends StatelessWidget {
 }
 
 class Facts extends StatelessWidget {
-  const Facts(this.values, {super.key});
+  const Facts(this.values, {super.key, this.columns = 2});
   final Map<String, String> values;
+  final int columns;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) => Wrap(
       spacing: 14,
-      runSpacing: 18,
+      runSpacing: 14,
       children: values.entries
           .map(
             (e) => SizedBox(
-              width: (c.maxWidth - 14) / 2,
+              width: (c.maxWidth - (14 * (columns - 1))) / columns,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

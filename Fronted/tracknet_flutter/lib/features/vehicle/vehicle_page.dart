@@ -15,53 +15,77 @@ class VehiclePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plate = ref.watch(selectedPlateProvider);
+    final reduceMotion =
+        ref.watch(reduceMotionProvider) ||
+        MediaQuery.disableAnimationsOf(context);
+    final animationDuration = reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 260);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const PlateSearch(),
-        const SizedBox(height: 20),
-        if (plate == null)
-          const Panel(
-            title: 'Vehicle intelligence',
-            child: EmptyState(
-              'No vehicle selected',
-              message:
-                  'Search a registration plate or choose a detection below.',
+        const SizedBox(height: 14),
+        AnimatedSwitcher(
+          duration: animationDuration,
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, .025),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
             ),
-          )
-        else
-          ref
-              .watch(journeyProvider(plate))
-              .when(
-                loading: () => const Panel(
-                  title: 'Correlating camera records',
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ),
-                error: (e, _) => Panel(
-                  title: 'Search failed',
+          ),
+          child: plate == null
+              ? const Panel(
+                  key: ValueKey('vehicle-empty'),
+                  title: 'Vehicle intelligence',
                   child: EmptyState(
-                    'Unable to correlate records',
-                    message: e.toString(),
-                    action: TextButton(
-                      onPressed: () => ref.invalidate(journeyProvider(plate)),
-                      child: const Text('Retry search'),
-                    ),
+                    'No vehicle selected',
+                    message: 'Search a registration plate or choose a detection below.',
                   ),
-                ),
-                data: (journey) => journey == null
-                    ? Panel(
-                        title: 'Vehicle intelligence',
-                        child: EmptyState(
-                          'No records for $plate',
-                          message: 'No correlated trajectory is available in the current index.',
+                )
+              : ref
+                    .watch(journeyProvider(plate))
+                    .when(
+                      loading: () => const Panel(
+                        key: ValueKey('vehicle-loading'),
+                        title: 'Correlating camera records',
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(child: CircularProgressIndicator()),
                         ),
-                      )
-                    : JourneyView(key: ValueKey(plate), journey: journey),
-              ),
-        const SizedBox(height: 24),
+                      ),
+                      error: (e, _) => Panel(
+                        key: const ValueKey('vehicle-error'),
+                        title: 'Search failed',
+                        child: EmptyState(
+                          'Unable to correlate records',
+                          message: e.toString(),
+                          action: TextButton(
+                            onPressed: () =>
+                                ref.invalidate(journeyProvider(plate)),
+                            child: const Text('Retry search'),
+                          ),
+                        ),
+                      ),
+                      data: (journey) => journey == null
+                          ? Panel(
+                              key: const ValueKey('vehicle-no-records'),
+                              title: 'Vehicle intelligence',
+                              child: EmptyState(
+                                'No records for $plate',
+                                message: 'No correlated trajectory is available in the current index.',
+                              ),
+                            )
+                          : JourneyView(key: ValueKey(plate), journey: journey),
+                    ),
+        ),
+        const SizedBox(height: 16),
         const DetectionTable(),
       ],
     );
@@ -184,116 +208,121 @@ class _JourneyViewState extends ConsumerState<JourneyView>
       _replay.stop();
       _replay.value = 1;
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Panel(
-          title: j.vehicle.plate,
-          action: StatusBadge(j.vehicle.blacklisted ? 'Flagged' : 'Normal'),
-          child: Facts({
-            'Vehicle': j.vehicle.type,
-            'First seen': clockText(j.events.first.timestamp),
-            'Last seen': clockText(j.events.last.timestamp),
-            'Cameras visited': '${j.cameraCount}',
-            'Distance': '${j.distance.toStringAsFixed(1)} km',
-            'Duration': '${j.duration.inMinutes} min',
-            'Average speed': metric(j.averageSpeed, suffix: ' km/h'),
-            'Reads': '${j.events.length}',
-          }),
-        ),
-        const SizedBox(height: 20),
-        TwoColumns(
-          main: AnimatedBuilder(
-            animation: _replay,
-            builder: (context, _) => CityMap(
-              journey: j,
-              progress: Curves.easeOutExpo.transform(_replay.value),
-              focus: focus,
-              height: 430,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 900;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Panel(
+              title: j.vehicle.plate,
+              action: StatusBadge(j.vehicle.blacklisted ? 'Flagged' : 'Normal'),
+              child: Facts({
+                'Vehicle': j.vehicle.type,
+                'First seen': clockText(j.events.first.timestamp),
+                'Last seen': clockText(j.events.last.timestamp),
+                'Cameras visited': '${j.cameraCount}',
+                'Distance': '${j.distance.toStringAsFixed(1)} km',
+                'Duration': '${j.duration.inMinutes} min',
+                'Average speed': metric(j.averageSpeed, suffix: ' km/h'),
+                'Reads': '${j.events.length}',
+              }, columns: compact ? 2 : 4),
             ),
-          ),
-          side: Panel(
-            title: 'Captured trajectory',
-            action: IconButton(
-              tooltip: 'Replay journey',
-              onPressed: () {
-                setState(() => focus = null);
-                ref.read(selectedEventProvider.notifier).state = null;
-                if (reduced) {
-                  _replay.value = 1;
-                } else {
-                  _replay.forward(from: 0);
-                }
-              },
-              icon: const Icon(Icons.replay),
-            ),
-            child: SizedBox(
-              height: 470,
-              child: AnimatedBuilder(
+            const SizedBox(height: 14),
+            TwoColumns(
+              main: AnimatedBuilder(
                 animation: _replay,
-                builder: (context, _) => ListView.builder(
-                  itemCount: j.events.length,
-                  itemBuilder: (context, i) {
-                    final d = j.events[i], c = cams[d.cameraId];
-                    final p = Curves.easeOutExpo.transform(_replay.value);
-                    final threshold = j.duration.inMilliseconds == 0
-                        ? 1.0
-                        : d.timestamp
-                                  .difference(j.events.first.timestamp)
-                                  .inMilliseconds /
-                              j.duration.inMilliseconds;
-                    final next = i + 1 >= j.events.length
-                        ? 1.1
-                        : j.events[i + 1].timestamp
-                                  .difference(j.events.first.timestamp)
-                                  .inMilliseconds /
-                              j.duration.inMilliseconds;
-                    final active =
-                        selected == d.id ||
-                        (selected == null && p >= threshold && p < next);
-                    return AnimatedContainer(
-                      duration: Duration(milliseconds: reduced ? 0 : 180),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      decoration: BoxDecoration(
-                        color: active
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : null,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                builder: (context, _) => CityMap(
+                  journey: j,
+                  progress: Curves.easeOutExpo.transform(_replay.value),
+                  focus: focus,
+                  height: compact ? 300 : 360,
+                ),
+              ),
+              side: Panel(
+                title: 'Captured trajectory',
+                action: IconButton(
+                  tooltip: 'Replay journey',
+                  onPressed: () {
+                    setState(() => focus = null);
+                    ref.read(selectedEventProvider.notifier).state = null;
+                    if (reduced) {
+                      _replay.value = 1;
+                    } else {
+                      _replay.forward(from: 0);
+                    }
+                  },
+                  icon: const Icon(Icons.replay),
+                ),
+                child: SizedBox(
+                  height: compact ? 330 : 380,
+                  child: AnimatedBuilder(
+                    animation: _replay,
+                    builder: (context, _) => ListView.builder(
+                      itemCount: j.events.length,
+                      itemBuilder: (context, i) {
+                        final d = j.events[i], c = cams[d.cameraId];
+                        final p = Curves.easeOutExpo.transform(_replay.value);
+                        final threshold = j.duration.inMilliseconds == 0
+                            ? 1.0
+                            : d.timestamp
+                                      .difference(j.events.first.timestamp)
+                                      .inMilliseconds /
+                                  j.duration.inMilliseconds;
+                        final next = i + 1 >= j.events.length
+                            ? 1.1
+                            : j.events[i + 1].timestamp
+                                      .difference(j.events.first.timestamp)
+                                      .inMilliseconds /
+                                  j.duration.inMilliseconds;
+                        final active =
+                            selected == d.id ||
+                            (selected == null && p >= threshold && p < next);
+                        return AnimatedContainer(
+                          duration: Duration(milliseconds: reduced ? 0 : 180),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : null,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          title: Text(
-                            '${clockText(d.timestamp)} · ${d.cameraId}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              title: Text(
+                                '${clockText(d.timestamp)} · ${d.cameraId}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${c?.name ?? d.cameraId}\n${metric(d.speed)} km/h · OCR ${metric(d.confidence, decimals: 1)}%\n${d.status.label}',
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              onTap: () {
+                                _replay.stop();
+                                ref.read(selectedEventProvider.notifier).state =
+                                    d.id;
+                                setState(() => focus = c?.point);
+                              },
                             ),
                           ),
-                          subtitle: Text(
-                            '${c?.name ?? d.cameraId}\n${metric(d.speed)} km/h · OCR ${metric(d.confidence, decimals: 1)}%\n${d.status.label}',
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          onTap: () {
-                            _replay.stop();
-                            ref.read(selectedEventProvider.notifier).state =
-                                d.id;
-                            setState(() => focus = c?.point);
-                          },
-                        ),
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
