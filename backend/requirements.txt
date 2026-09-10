@@ -1,5 +1,13 @@
-Flask==3.1.3
-gunicorn
-psycopg2-binary==2.9.12
-python-dotenv==1.2.3
-PyYAML==6.0.3
+# Core web API
+Flask>=3.1,<4
+Flask-Caching>=2.3,<3
+Flask-SQLAlchemy>=3.1,<4
+SQLAlchemy>=2.0,<3
+
+# Database and configuration
+psycopg2-binary>=2.9,<3
+python-dotenv>=1.1,<2
+PyYAML>=6.0,<7
+
+# Production server (used by Railway/Linux deployments)
+gunicorn>=23,<24
