@@ -1,50 +1,49 @@
-from engine.core.tracker import MultiThreadingTracker  # pyright: ignore[reportMissingImports]
+"""Preview frames read by ``MultiThreadingTracker`` from a camera or video."""
+
+import argparse
+
 import cv2 as cv
-import time
 
-mtt = MultiThreadingTracker()
+from engine.core.tracker import MultiThreadingTracker
 
-print("Initializing video capture thread...") 
-mtt.start_cap_thread(r"D:\time_to_code\SIH\Dataset\vecteezy_new-york-us-03-02-2025-brooklyn-bridge-traffic-with-cars_57852135.mp4")
 
-# --- FIX 1: Create a normal, resizable window BEFORE the loop ---
-window_name = "Multi-Threading Tracking Pipeline"
-cv.namedWindow(window_name, cv.WINDOW_NORMAL) 
+def video_source(value):
+    try:
+        return int(value)
+    except ValueError:
+        return value
 
-# Optional: Set a starting default window size on your screen
-cv.resizeWindow(window_name, 960, 540) 
 
-while True:
-    ret, frame = mtt.get_frame()
-    
-    if not ret:
-        if mtt.stopped: 
-            print("Video ended or thread stopped.")
-            break
-        time.sleep(0.001) 
-        continue
-    
-    # --- FIX 2: Compute scaling factor to preserve natural aspect ratio ---
-    # Choose a maximum target width you want on your screen (e.g., 1000 pixels)
-    target_width = 1000 
-    
-    # Get original image height and width
-    h, w = frame.shape[:2]
-    
-    # Calculate aspect ratio factor
-    scale_factor = target_width / float(w)
-    target_height = int(h * scale_factor)
-    
-    # Resize cleanly without any stretching or distortion
-    resized_frame = cv.resize(frame, (target_width, target_height), interpolation=cv.INTER_AREA)
-    
-    # --- Show the resized frame inside the named window ---
-    cv.imshow(window_name, resized_frame)
-    
-    key = cv.waitKey(1) # Restricts playback to ~30 FPS speed
-    if key == 27: # ESC key
-        break
+def positive_int(value):
+    integer = int(value)
+    if integer < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return integer
 
-mtt.release()
-cv.destroyAllWindows()
-print("Cleaned up and exited successfully.")
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", type=video_source, help="Video path, stream URL, or camera index")
+    parser.add_argument("--width", type=positive_int, default=1000)
+    args = parser.parse_args()
+
+    window_name = "Multi-Threading Tracking Pipeline"
+    cv.namedWindow(window_name, cv.WINDOW_NORMAL)
+    with MultiThreadingTracker().start(args.source) as tracker:
+        while True:
+            ok, frame = tracker.read(timeout=0.1)
+            if not ok:
+                if tracker.stopped:
+                    break
+                continue
+            height, width = frame.shape[:2]
+            scale = min(1.0, args.width / width)
+            preview = cv.resize(frame, (int(width * scale), int(height * scale)))
+            cv.imshow(window_name, preview)
+            if cv.waitKey(1) == 27:
+                break
+    cv.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
