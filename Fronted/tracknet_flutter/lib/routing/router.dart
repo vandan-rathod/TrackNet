@@ -59,22 +59,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               pageBuilder: (context, state) => CustomTransitionPage(
                 key: state.pageKey,
                 child: FeatureBody(view: route.key, child: route.value),
-                transitionDuration: Duration(
-                  milliseconds: ref.read(reduceMotionProvider) ? 0 : 180,
-                ),
+                // FeatureBody owns the page entrance animation. Keeping a
+                // second route transition here makes navigation feel doubled
+                // and can cause uneven frame pacing on lower-power devices.
+                transitionDuration: Duration.zero,
                 transitionsBuilder: (context, animation, secondary, child) =>
-                    MediaQuery.disableAnimationsOf(context)
-                    ? child
-                    : FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween(
-                            begin: const Offset(0, .01),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      ),
+                    child,
               ),
             ),
         ],

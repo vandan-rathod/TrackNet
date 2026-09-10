@@ -519,13 +519,16 @@ class SimulationButton extends ConsumerWidget {
   }
 }
 
-class FeatureBody extends StatelessWidget {
+class FeatureBody extends ConsumerWidget {
   const FeatureBody({super.key, required this.view, required this.child});
   final String view;
   final Widget child;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final heading = headings[view]!;
+    final reduceMotion =
+        ref.watch(reduceMotionProvider) ||
+        MediaQuery.disableAnimationsOf(context);
     return LayoutBuilder(
       builder: (context, c) {
         final mobile = c.maxWidth < 650;
@@ -565,7 +568,10 @@ class FeatureBody extends StatelessWidget {
                   child: SimulationButton(),
                 ),
               const SizedBox(height: 22),
-              DataGate(view: view, child: child),
+              AnimatedPageEntrance(
+                reduceMotion: reduceMotion,
+                child: DataGate(view: view, child: child),
+              ),
               const SizedBox(height: 30),
             ],
           ),
