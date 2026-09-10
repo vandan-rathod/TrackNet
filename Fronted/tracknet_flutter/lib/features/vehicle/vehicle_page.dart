@@ -327,45 +327,57 @@ class DetectionTable extends ConsumerWidget {
             onChanged: (s) => update(q.copyWith(query: s, page: 0)),
           ),
           const SizedBox(height: 16),
-          PagedTable(
-            columns: const [
-              'Time',
-              'Plate',
-              'Type',
-              'Camera',
-              'Location',
-              'Speed',
-              'Confidence',
-              'Status',
-            ],
-            rows: pageItems(rows, q)
-                .map(
-                  (d) => DataRow(
-                    onSelectChanged: (_) {
-                      if (d.plate == null) {
-                        showDetection(context, d);
-                      } else {
-                        context.go('/vehicle?plate=${d.plate}');
-                      }
-                    },
-                    cells: [
-                      DataCell(Text(clockText(d.timestamp))),
-                      DataCell(Text(d.displayPlate)),
-                      DataCell(Text(d.vehicleType ?? 'Unclassified')),
-                      DataCell(Text(d.cameraId)),
-                      DataCell(Text(cams[d.cameraId]?.name ?? 'Unavailable')),
-                      DataCell(Text(metric(d.speed, suffix: ' km/h'))),
-                      DataCell(
-                        Text(metric(d.confidence, suffix: '%', decimals: 1)),
-                      ),
-                      DataCell(StatusBadge(d.status.label)),
-                    ],
-                  ),
-                )
-                .toList(),
-            query: q,
-            onQuery: update,
-            total: rows.length,
+          AnimatedSwitcher(
+            duration: ref.watch(reduceMotionProvider)
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SizeTransition(sizeFactor: animation, child: child),
+            ),
+            child: PagedTable(
+              key: ValueKey(
+                '${q.query}|${q.filter}|${q.sort}|${q.ascending}|${q.page}|${q.pageSize}',
+              ),
+              columns: const [
+                'Time',
+                'Plate',
+                'Type',
+                'Camera',
+                'Location',
+                'Speed',
+                'Confidence',
+                'Status',
+              ],
+              rows: pageItems(rows, q)
+                  .map(
+                    (d) => DataRow(
+                      onSelectChanged: (_) {
+                        if (d.plate == null) {
+                          showDetection(context, d);
+                        } else {
+                          context.go('/vehicle?plate=${d.plate}');
+                        }
+                      },
+                      cells: [
+                        DataCell(Text(clockText(d.timestamp))),
+                        DataCell(Text(d.displayPlate)),
+                        DataCell(Text(d.vehicleType ?? 'Unclassified')),
+                        DataCell(Text(d.cameraId)),
+                        DataCell(Text(cams[d.cameraId]?.name ?? 'Unavailable')),
+                        DataCell(Text(metric(d.speed, suffix: ' km/h'))),
+                        DataCell(
+                          Text(metric(d.confidence, suffix: '%', decimals: 1)),
+                        ),
+                        DataCell(StatusBadge(d.status.label)),
+                      ],
+                    ),
+                  )
+                  .toList(),
+              query: q,
+              onQuery: update,
+              total: rows.length,
+            ),
           ),
         ],
       ),

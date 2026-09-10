@@ -25,22 +25,27 @@ class PagedTable extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            showCheckboxColumn: false,
-            sortColumnIndex: query.sort,
-            sortAscending: query.ascending,
-            columns: columns.indexed
-                .map(
-                  (e) => DataColumn(
-                    label: Text(e.$2),
-                    onSort: (i, asc) =>
-                        onQuery(query.copyWith(sort: i, ascending: asc)),
-                  ),
-                )
-                .toList(),
-            rows: rows,
+        LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                showCheckboxColumn: false,
+                sortColumnIndex: query.sort,
+                sortAscending: query.ascending,
+                columns: columns.indexed
+                    .map(
+                      (e) => DataColumn(
+                        label: Text(e.$2),
+                        onSort: (i, asc) =>
+                            onQuery(query.copyWith(sort: i, ascending: asc)),
+                      ),
+                    )
+                    .toList(),
+                rows: rows,
+              ),
+            ),
           ),
         ),
         if (total == 0)
