@@ -103,6 +103,58 @@ class Panel extends StatelessWidget {
   );
 }
 
+class AnimatedPageEntrance extends StatefulWidget {
+  const AnimatedPageEntrance({
+    super.key,
+    required this.child,
+    required this.reduceMotion,
+  });
+  final Widget child;
+  final bool reduceMotion;
+
+  @override
+  State<AnimatedPageEntrance> createState() => _AnimatedPageEntranceState();
+}
+
+class _AnimatedPageEntranceState extends State<AnimatedPageEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+  );
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, .012),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  bool _started = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.reduceMotion) {
+      _controller.value = 1;
+    } else if (!_started) {
+      _started = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller.forward();
+      });
+    }
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+  }
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState(
     this.title, {
