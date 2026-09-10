@@ -255,9 +255,16 @@ class FlowDiagram extends StatelessWidget {
       children: [
         SizedBox(
           height: 200,
-          child: CustomPaint(
-            painter: _FlowPainter(flows, zones, selected),
-            size: const Size(double.infinity, 200),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: Duration(
+              milliseconds: MediaQuery.disableAnimationsOf(context) ? 0 : 480,
+            ),
+            curve: Curves.easeOutCubic,
+            builder: (context, progress, _) => CustomPaint(
+              painter: _FlowPainter(flows, zones, selected, progress),
+              size: const Size(double.infinity, 200),
+            ),
           ),
         ),
         for (final f in flows)
@@ -281,10 +288,11 @@ class FlowDiagram extends StatelessWidget {
 }
 
 class _FlowPainter extends CustomPainter {
-  _FlowPainter(this.flows, this.zones, this.selected);
+  _FlowPainter(this.flows, this.zones, this.selected, this.progress);
   final List<OdFlow> flows;
   final List<Zone> zones;
   final OdFlow? selected;
+  final double progress;
   @override
   void paint(Canvas canvas, Size size) {
     final nodes = <String, Offset>{};
@@ -313,13 +321,19 @@ class _FlowPainter extends CustomPainter {
           ..color =
               (selected?.id == f.id ? primaryInk : const Color(0xffd4d4d8))
                   .withValues(
-                    alpha: selected == null || selected?.id == f.id ? 0.8 : .2,
+                    alpha:
+                        (selected == null || selected?.id == f.id ? 0.8 : .2) *
+                        progress,
                   ),
       );
     }
     for (final z in zones) {
       final p = nodes[z.id]!;
-      canvas.drawCircle(p, 5, Paint()..color = primaryInk);
+      canvas.drawCircle(
+        p,
+        5 * Curves.easeOutBack.transform(progress.clamp(0, 1)),
+        Paint()..color = primaryInk.withValues(alpha: progress),
+      );
       final text = TextPainter(
         text: TextSpan(
           text: z.name,
@@ -339,5 +353,7 @@ class _FlowPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FlowPainter old) =>
-      old.selected != selected || old.flows != flows;
+      old.selected != selected ||
+      old.flows != flows ||
+      old.progress != progress;
 }
