@@ -14,6 +14,9 @@ class SettingsPage extends ConsumerWidget {
         demo = ref.watch(dataModeProvider) == DataMode.demo,
         platform = ref.watch(dataProvider.select((d) => d?.platform)),
         reconnect = ref.watch(reconnectionProvider).value;
+    final rowShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    );
     void update(SettingsState s) => action(
       context,
       () => ref.read(repositoryProvider).updateSettings(s),
@@ -28,6 +31,7 @@ class SettingsPage extends ConsumerWidget {
           children: [
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Live traffic simulation'),
               subtitle: const Text('Detections, counters and corridor drift'),
               value: settings.simulation,
@@ -37,6 +41,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Ambient traffic particles'),
               value: settings.particles,
               onChanged: demo
@@ -45,6 +50,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Automatic alerts'),
               value: settings.automaticAlerts,
               onChanged: demo
@@ -53,6 +59,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Camera feed engine'),
               value: settings.feeds,
               onChanged: demo
@@ -61,6 +68,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Map ambient grid'),
               value: settings.grid,
               onChanged: (v) => update(settings.copyWith(grid: v)),
@@ -68,6 +76,7 @@ class SettingsPage extends ConsumerWidget {
             const Divider(height: 24),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              shape: rowShape,
               title: const Text('Reduce motion'),
               subtitle: const Text(
                 'Also respects your device accessibility preference',
