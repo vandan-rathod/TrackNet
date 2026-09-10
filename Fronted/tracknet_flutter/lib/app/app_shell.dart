@@ -177,6 +177,7 @@ class SideNavigation extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 28),
             child: InkWell(
+              borderRadius: BorderRadius.circular(12),
               onTap: () => ref.read(collapsedProvider.notifier).state = !ref
                   .read(collapsedProvider),
               child: Row(
@@ -194,36 +195,39 @@ class SideNavigation extends ConsumerWidget {
                       size: 23,
                     ),
                   ),
-                  if (!collapsed) ...[
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TrackNet',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -.8,
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeInOutCubic,
+                    child: collapsed
+                        ? const SizedBox.shrink()
+                        : const SizedBox(
+                            width: 135,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'TrackNet',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -.8,
+                                    ),
+                                  ),
+                                  Text(
+                                    'CITYVISION',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: mutedInk,
+                                      letterSpacing: 1.9,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              'CITYVISION',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: mutedInk,
-                                letterSpacing: 1.9,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -249,37 +253,58 @@ class SideNavigation extends ConsumerWidget {
               itemCount: destinations.length,
               itemBuilder: (context, i) {
                 final d = destinations[i];
+                final radius = BorderRadius.circular(10);
+                void onTap() {
+                  if (Scaffold.of(context).isDrawerOpen) {
+                    Navigator.pop(context);
+                  }
+                  context.go('/${d.$1}');
+                }
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Tooltip(
                     message: d.$2,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: collapsed ? 14 : 12,
-                      ),
-                      selected: selected == i,
-                      selectedTileColor: primaryInk.withValues(alpha: .12),
-                      selectedColor: primaryInk,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      leading: Icon(d.$3, size: 20),
-                      title: collapsed
-                          ? null
-                          : Text(
+                    child: collapsed
+                        ? Material(
+                            color: selected == i
+                                ? primaryInk.withValues(alpha: .12)
+                                : Colors.transparent,
+                            borderRadius: radius,
+                            child: InkWell(
+                              borderRadius: radius,
+                              onTap: onTap,
+                              child: SizedBox(
+                                height: 48,
+                                child: Center(
+                                  child: Icon(
+                                    d.$3,
+                                    size: 20,
+                                    color: selected == i ? primaryInk : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            selected: selected == i,
+                            selectedTileColor: primaryInk.withValues(
+                              alpha: .12,
+                            ),
+                            selectedColor: primaryInk,
+                            shape: RoundedRectangleBorder(borderRadius: radius),
+                            leading: Icon(d.$3, size: 20),
+                            title: Text(
                               d.$2,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                      onTap: () {
-                        if (Scaffold.of(context).isDrawerOpen) {
-                          Navigator.pop(context);
-                        }
-                        context.go('/${d.$1}');
-                      },
-                    ),
+                            onTap: onTap,
+                          ),
                   ),
                 );
               },
